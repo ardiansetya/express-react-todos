@@ -8,16 +8,19 @@ router.get("/todos", async (req, res) => {
         const todos = await getTodos();
         res.send(todos);
     } catch (error) {
-     console.log(error.message);   
+        console.log(error.message);
+        res.status(500).send(error.message)
+
     }
 });
 router.post("/todos", async (req, res) => {
-    const newTodoData= req.body
+    const newTodoData = req.body
     try {
         const todo = await createTodo(newTodoData);
         res.send(todo);
     } catch (error) {
-     console.log(error.message);   
+        console.log(error.message);
+        res.status(500).send(error.message)
     }
 });
 

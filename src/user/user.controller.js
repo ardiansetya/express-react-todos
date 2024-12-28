@@ -8,16 +8,20 @@ router.get("/user", async (req, res) => {
         const user = await getUsers();
         res.status(200).send(user);
     } catch (error) {
-     console.log(error.message);   
+        console.log(error.message);
+        res.status(500).send(error.message)
+
     }
 });
 router.post("/user", async (req, res) => {
-    const newUserData= req.body
+    const newUserData = req.body
     try {
         const user = await createUser(newUserData);
         res.status(201).send(user);
     } catch (error) {
-     console.log(error.message);   
+        console.log(error.message);
+        res.status(500).send(error.message)
+
     }
 });
 

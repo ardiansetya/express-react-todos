@@ -2,6 +2,7 @@ import express from "express";
 import { configDotenv } from "dotenv";
 import todoRouter from "./todos/todos.controller.js"; // Router untuk todos
 import userRouter from "./user/user.controller.js"; // Router untuk user
+import authRouter from "./auth/auth.controller.js"
 
 configDotenv();
 const port = process.env.PORT || 3000; // Gunakan default jika PORT tidak diatur
@@ -19,6 +20,7 @@ app.use('/api', todoRouter);
 
 // Gunakan router untuk user
 app.use('/api', userRouter);
+app.use('/api', authRouter);
 
 // Jalankan server
 app.listen(port, () => {
