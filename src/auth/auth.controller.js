@@ -1,25 +1,38 @@
-import {prisma} from "../db/index.js";
+import { prisma } from "../db/index.js";
 import bcryptjs from "bcryptjs";
 import { Router } from "express";
+import jwt from "jsonwebtoken";
+import { configDotenv } from "dotenv";
+configDotenv();
 const router = Router();
 
 router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     try {
-        const user = await prisma.user.findUnique({
+        if (!email || !password) {
+            return res.status(422).json({ message: "Missing required fields" });
+        }
+
+        const user = await prisma.user.findFirst({
             where: {
-                email,
-            },
-        });
+                email
+            }
+        })
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(401).json({ message: "email or password is incorrect" });
         }
-        if (user.password !== password) {
-            return res.status(401).json({ message: "Invalid password" });
+
+        const matchedPassword = await bcryptjs.compare(password, user.password);
+        if (!matchedPassword) {
+            return res.status(401).json({ message: "Unauthorized" });
         }
-        return res.status(200).json({ message: "Login successful" });
+
+        const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+            expiresIn: "1d"
+        });
+
+        res.status(200).json({token: accessToken, message: "Login successful" });
     } catch (error) {
-        console.error(error);
         return res.status(500).json({ message: "Internal server error" });
     }
 })
@@ -34,18 +47,6 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcryptjs.hash(password, 10);
 
     try {
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-            },
-            select:{
-                name: true,
-                email: true
-            }
-        });
-
         const existingUser = await prisma.user.findFirst({
             where: {
                 email,
@@ -55,7 +56,18 @@ router.post("/register", async (req, res) => {
             return res.status(409).json({ message: "User already exists" });
         }
 
-        return res.status(201).json({user, message: "User created successfully" });
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+            },
+            select: {
+                name: true,
+                email: true
+            }
+        });
+        return res.status(201).json({ user, message: "User created successfully" });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
