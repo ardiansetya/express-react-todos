@@ -37,7 +37,7 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ message: "Email or password is incorrect" });
         }
 
-        const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+        const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
             subject: "accessApi",
             expiresIn: "1d",
         });

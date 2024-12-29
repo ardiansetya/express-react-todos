@@ -5,11 +5,22 @@ export const getTodoDatas = async () => {
     return todos;
 }
 
-export const insertTodoData = async (newTodoData) => {
+export const getTodoByTitle = async (title) => {
+    const todoTitle = await prisma.todos.findMany({
+        where: {
+            title
+        }
+    })
+    return todoTitle
+}
+
+export const insertTodoData = async (newTodoData, userId) => {
     const todo = await prisma.todos.create({
         data:{
             title: newTodoData.title,
-            desc: newTodoData.desc
+            desc: newTodoData.desc,
+            isCompelete: false,
+            userId : newTodoData.userId?? userId
         }
     });
     return todo;
