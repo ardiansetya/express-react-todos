@@ -1,5 +1,5 @@
 import {prisma} from "../db/index.js";
-
+import bcryptjs from "bcryptjs";
 import { Router } from "express";
 const router = Router();
 
@@ -26,15 +26,36 @@ router.post("/login", async (req, res) => {
 
 router.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(422).json({ message: "Missing required fields" });
+    }
+
+    const hashedPassword = await bcryptjs.hash(password, 10);
+
     try {
         const user = await prisma.user.create({
             data: {
                 name,
                 email,
-                password,
+                password: hashedPassword,
+            },
+            select:{
+                name: true,
+                email: true
+            }
+        });
+
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                email,
             },
         });
-        return res.status(201).json(user);
+        if (existingUser) {
+            return res.status(409).json({ message: "User already exists" });
+        }
+
+        return res.status(201).json({user, message: "User created successfully" });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal server error" });
