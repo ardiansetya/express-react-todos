@@ -1,7 +1,11 @@
 import {prisma} from '../db/index.js';
 
-export const getTodoDatas = async () => {
-    const todos = await prisma.todos.findMany();
+export const getTodoDatas = async (userId) => {
+    const todos = await prisma.todos.findMany({
+        where:{
+            userId
+        }
+    });
     return todos;
 }
 
@@ -26,7 +30,7 @@ export const insertTodoData = async (newTodoData, userId) => {
     return todo;
 }
 
-export const editTodoData = async (id, newTodoData) => {
+export const editTodoData = async (id, newTodoData, userId) => {
     const todo = await prisma.todos.update({
         where: {
             id

@@ -1,7 +1,7 @@
 import { deleteTodoData, editTodoData, getTodoByTitle, getTodoDatas, insertTodoData } from "./todo.repository.js";
 
-export const getTodos = async () => {
-    const todos = await getTodoDatas();
+export const getTodos = async (userId) => {
+    const todos = await getTodoDatas(userId);
     return todos;
 }
 
@@ -16,7 +16,7 @@ export const createTodo = async (newTodoData, userId) => {
     return todo;
 }
 
-export const editTodo = async (id, newTodoData) => {
+export const editTodo = async (id, newTodoData, userId) => {
     const todo = await editTodoData(id, newTodoData);
     return todo;
 }
