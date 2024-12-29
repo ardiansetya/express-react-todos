@@ -19,7 +19,7 @@ export const insertTodoData = async (newTodoData, userId) => {
         data:{
             title: newTodoData.title,
             desc: newTodoData.desc,
-            isCompelete: false,
+            isCompelete: newTodoData.isCompelete ?? false,
             userId : newTodoData.userId?? userId
         }
     });
@@ -33,7 +33,9 @@ export const editTodoData = async (id, newTodoData) => {
         },
         data: {
             title: newTodoData.title,
-            desc: newTodoData.desc
+            desc: newTodoData.desc,
+            isCompelete: newTodoData.isCompelete ?? false,
+            userId: newTodoData.userId ?? userId
         }
     });
     return todo;
