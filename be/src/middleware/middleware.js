@@ -18,6 +18,7 @@ export const authMiddleware = (req, res, next) => {
         const decodedToken = jwt.verify(accessToken, process.env.JWT_SECRET);
 
         // Simpan data pengguna dari token ke request (opsional)
+        req.accessToken = { value: accessToken, exp: decodedToken.exp };
         req.user = decodedToken;
 
         // Lanjutkan ke handler berikutnya

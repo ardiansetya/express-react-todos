@@ -142,8 +142,6 @@ router.post("/refresh-token", async (req, res) => {
     }
 });
 
-
-
 router.post("/register", async (req, res) => {
     const { name, email, password } = req.body;
 
@@ -177,6 +175,19 @@ router.post("/register", async (req, res) => {
         return res.status(201).json({ user, message: "User created successfully" });
     } catch (error) {
         console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+})
+
+router.post("/logout", async (req, res) => {
+    try {
+        await prisma.refreshToken.deleteMany({
+            where:{
+                userId: req.user.id
+            }
+        })
+        
+    } catch (error) {
         return res.status(500).json({ message: "Internal server error" });
     }
 })
