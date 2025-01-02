@@ -39,7 +39,21 @@ router.post("/login", async (req, res) => {
 
         const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
             subject: "accessApi",
-            expiresIn: "1d",
+            expiresIn: process.env.JWT_SECRET_EXPIRATION,
+        });
+
+        const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_TOKEN, {
+            subject: "refreshToken",
+            expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION,
+        });
+
+        await prisma.refreshToken.create({
+            data: {
+                token: refreshToken,
+                expiresAt: new Date(Date.now() + parseInt(process.env.JWT_REFRESH_TOKEN_EXPIRATION) * 1000),
+                userId: user.id
+            }
+
         });
 
         const { password: _, ...userWithoutPassword } = user;
@@ -47,6 +61,7 @@ router.post("/login", async (req, res) => {
         res.status(200).json({
             user: userWithoutPassword,
             token: accessToken,
+            refreshToken,
             message: "Login successful",
         });
     } catch (error) {
@@ -54,6 +69,79 @@ router.post("/login", async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 });
+
+router.post("/refresh-token", async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        // Validasi input
+        if (!refreshToken) {
+            return res.status(401).json({ message: "Missing refresh token" });
+        }
+
+        // Cari token di database sebelum verifikasi
+        const storedToken = await prisma.refreshToken.findFirst({
+            where: { token: refreshToken },
+        });
+
+        if (!storedToken) {
+            return res.status(401).json({ message: "Invalid refresh token" });
+        }
+
+        // Verifikasi refresh token
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN);
+        } catch (err) {
+            // Jika token invalid atau expired
+            return res.status(401).json({ message: "Refresh token invalid or expired" });
+        }
+
+        // Hapus token lama dari database
+        await prisma.refreshToken.delete({
+            where: { id: storedToken.id },
+        });
+
+        // Buat access token baru
+        const accessToken = jwt.sign(
+            { userId: decoded.userId },
+            process.env.JWT_SECRET,
+            {
+                subject: "accessApi",
+                expiresIn: process.env.JWT_SECRET_EXPIRATION, 
+            }
+        );
+
+        // Buat refresh token baru
+        const newRefreshToken = jwt.sign(
+            { userId: decoded.userId },
+            process.env.JWT_REFRESH_TOKEN,
+            {
+                subject: "refreshToken",
+                expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRATION, 
+            }
+        );
+
+        // Simpan refresh token baru ke database
+        await prisma.refreshToken.create({
+            data: {
+                token: newRefreshToken,
+                userId: decoded.userId,
+                expiresAt: new Date(Date.now() + parseInt(process.env.JWT_REFRESH_TOKEN_EXPIRATION) * 1000),
+            },
+        });
+
+        // Kirim token baru ke klien
+        return res.status(200).json({
+            accessToken,
+            refreshToken: newRefreshToken,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 
 
 router.post("/register", async (req, res) => {
